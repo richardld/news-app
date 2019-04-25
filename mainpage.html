@@ -1,0 +1,201 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>News site</title>
+  <link href="https://fonts.googleapis.com/css?family=Cardo|Roboto" rel="stylesheet"> 
+  <link rel="stylesheet" type="text/css" href="mainpage.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <h1 id="title">News site</h1>
+    <div class="top-flex-container" id="topDiv">
+      <div class="flex-item"><input id="searchBox" ype="text" placeholder="Search term:" id="name" name="name" size="50"></div>
+      <div class="flex-item"><button id="searchButton">Hello</button></div>
+    </div>
+    <script>
+        // Initial variables
+        var list;
+        
+        // API key for NewsAPI usage
+        var apiKey = "a5eaf03446824c559cc8c655fe0e769b";
+        
+        // Variable to track how many articles accessed
+        // Used in API calls
+        var pageCount = 1;
+        
+        // Search term to mouse
+        var query = "cats";
+        
+        appendArticles(true, pageCount);
+        
+        // Add more articles to the page when the user reaches the bottom
+        $(window).scroll(function() {
+           if($(window).scrollTop() + $(window).height() > $(document).height() - 1) {
+             pageCount+=1
+             appendArticles(false, pageCount);
+           }
+        });
+        
+        // Function for adding articles to the page
+        // Requires boolean initial for if the document has had articles already added
+        // Require pageNum to know which articles to get in API call
+        function appendArticles(initial, pageNum) {
+          $.get("https://newsapi.org/v2/everything?q=" + query + "&from=" + 
+              whatIsTheDate() + "&to=" + whatIsTheDate(-7) + 
+              "&sortBy=popularity" + "&pageSize=30&page=" + pageNum + 
+              "&apiKey=" + apiKey, function(data, status) {
+            list = JSON.parse(JSON.stringify(data));
+            console.log("Articles length: " + list.articles.length);
+            if(list.articles.length < 30) {
+              alert("No more articles found.");
+            } else {
+              pageLayoutAppend(initial, list.articles);
+            }
+          });
+        }
+        
+      
+        // Initial page element instantiation
+        var topDiv = document.getElementById('topDiv');
+        var searchButton = document.getElementById("searchButton");
+        var searchBox = document.getElementById("searchBox");
+        searchButton.addEventListener("click", function() {
+          search(document.getElementById("searchBox").value, "relevance");
+        });
+        
+        // Search function
+        function search(queryLocal, sort) {
+          // Save query to variable
+          query = queryLocal;
+          // Reset page count, used for GUI display
+          pageCount = 1;
+          // Remove previous articles
+          var paragraphs = document.getElementsByClassName("flex-container");
+          while(paragraphs[0]) {
+            paragraphs[0].parentNode.removeChild(paragraphs[0]);
+          }
+          // Add more articles with new keyword as search term
+          appendArticles(true, pageCount);
+        }
+        
+        // Function for getting date in standard format
+        function whatIsTheDate(offset) {
+          
+          var today = new Date();
+          var dd = today.getDate();
+          var mm = today.getMonth() + 1;
+          var yyyy = today.getFullYear();
+
+          if (dd < 10) {
+            dd = '0' + dd + offset;
+          }
+
+          if (mm < 10) {
+            mm = '0' + mm;
+          }
+
+          today = yyyy + '-' + mm + '-' + dd;
+        }
+        
+        // Function for adding a single news article to a div
+        function addNewsSingleBox(article, divToAddTo, maxWidth = "100%") {
+          
+          // Create div to contain news box
+          var $rightOuterDiv = $("<div>", {"class": "rightWrapper"});
+          $rightOuterDiv.css("maxWidth", maxWidth);
+          var $div = $("<div>", {"class": "thumb2"});
+          var $innerDiv = $("<div>", {"class": "thumb2"});
+          
+          // Set image
+          var $image = $("<img>", {"class": "imageSide", "src": article.urlToImage});
+          
+          // Set link for text
+          var $innerTextDiv = $("<div>", {"class": "flex-itemlink"});
+          var $link = $("<a>", {"class": "bottomCaption", "href": article.url});
+          $link.text(article.title);
+          
+          // Append news box elements to outer container
+          $innerDiv.append($image);
+          $div.append($innerDiv);
+          $innerTextDiv.append($link);
+          $div.append($innerTextDiv);
+          $rightOuterDiv.append($div);
+          
+          // Append outer container to specified div
+          divToAddTo.append($rightOuterDiv);
+        }
+        
+        // Function for adding a large news collection into a div
+        function addNewsBigBox(articles, divToAddTo) {
+          
+          // Create left panel
+          var $kindaOuterDiv = $("<div>", {"class": "kindaWrapper"})
+          var $div = $("<div>", {"id": "main", "class": "mainArticle"});
+          var $innerDiv = $("<div>", {"class": "thumb"});
+          var $image = $("<img>", {"class": "imageMain", "src": articles[0].urlToImage});
+          var $innerTextDiv = $("<div>", {"class": "flex-item"});
+          var $link = $("<a>", {"class": "bottomCaption", "href": articles[0].url});
+          $link.text(articles[0].title);
+
+          // Append div to outer containers
+          $innerDiv.append($image);
+          $div.append($innerDiv);
+          $innerTextDiv.append($link);
+          $div.append($innerTextDiv);
+          $kindaOuterDiv.append($div);
+          
+          // Create right panel
+          var $sidePanel = $("<div>", {"class": "sideVertical"});
+          for(i = 1; i < 5; i++) {
+            var $sideContent = $("<a>", {"class": "side", "href": articles[i].url});
+            $sideContent.text(articles[i].title);
+            $sidePanel.append($sideContent);
+          }
+          
+          // Append div to outer containers
+          $kindaOuterDiv.append($sidePanel);
+          divToAddTo.append($kindaOuterDiv);
+        }
+        
+        var $outerDiv = $("<div>", {"class": "genericHorizontalFlex"});
+        var $leftVert = $("<div>", {"class": "specialVerticalFlex"});
+        var $rightHor = $("<div>", {"class": "specialHorizontalFlex"});
+        var $leftVertInRightHor = $("<div>", {"class": "notGenericVerticalFlex"});
+        var $rightVertInRightHor = $("<div>", {"class": "notGenericVerticalFlex"});
+        
+        function pageLayoutAppend(initial, articles) {
+          // Handle initial condition
+          if(initial) {
+            addNewsBigBox(articles.slice(0, 5), $leftVert);
+          }
+          
+          // Add a few news boxes to the page
+          for(var i = 5; i < articles.length - 6; i++) {
+            addNewsSingleBox(articles[i], $leftVertInRightHor);
+            addNewsSingleBox(articles[i + 1], $rightVertInRightHor);
+            $rightHorInLeftVert = $("<div>", {"class": "genericHorizontalFlex"});
+            addNewsSingleBox(articles[i + 2], $rightHorInLeftVert, "30%");
+            addNewsSingleBox(articles[i + 3], $rightHorInLeftVert, "30%");
+            addNewsSingleBox(articles[i + 4], $rightHorInLeftVert, "30%");
+            addNewsSingleBox(articles[i + 5], $rightHorInLeftVert, "30%");
+            i+=6;
+            $leftVert.append($rightHorInLeftVert);
+          }
+          
+          // Append to body
+          $rightHor.append($leftVertInRightHor);
+          $rightHor.append($rightVertInRightHor);
+          
+          $outerDiv.append($leftVert);
+          $outerDiv.append($rightHor);
+          
+          $("body").append($outerDiv);
+        }
+            
+    </script>
+</body>
+</html>
